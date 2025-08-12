@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Financeiro via API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --bg-color: #f4f6f8;
+        --sidebar-bg: #111827;
+        --card-bg: #ffffff;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --accent-color: #3b82f6;
+        --accent-color-light: #dbeafe;
+        --border-color: #e5e7eb;
+        --danger-color: #ef4444;
+        --warning-color: #f97316;
+        --success-color: #16a34a;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
+        display: flex;
+    }
+
+    /* --- Menu Lateral --- */
+    .sidebar {
+        width: 250px;
+        background: var(--sidebar-bg);
+        color: white;
+        padding: 25px 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    .sidebar nav {
+        flex: 1;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .sidebar nav a {
+        color: #d1d5db;
+        text-decoration: none;
+        padding: 15px 25px;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .sidebar nav a i {
+        width: 20px;
+        margin-right: 15px;
+        text-align: center;
+    }
+
+    .sidebar nav a:hover, .sidebar nav a.active {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    /* --- Conteúdo Principal --- */
+    .content {
+        flex: 1;
+        margin-left: 250px;
+        padding: 40px;
+    }
+
+    .content-header {
+        margin-bottom: 30px;
+    }
+
+    .content-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .content-header p {
+        color: var(--text-secondary);
+        margin: 5px 0 0 0;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+    }
+
+    .card .icon {
+        font-size: 1.8rem;
+        padding: 15px;
+        border-radius: 50%;
+        margin-right: 20px;
+    }
+
+    .card .icon.total-balance { color: var(--success-color); background-color: #dcfce7; }
+    .card .icon.pending-value { color: var(--warning-color); background-color: #fef3c7; }
+    .card .icon.overdue-value { color: var(--danger-color); background-color: #fee2e2; }
+    .card .icon.paid-percentage { color: var(--accent-color); background-color: #dbeafe; }
+
+    .card .info h3 {
+        margin: 0 0 5px 0;
+        font-size: 1rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .card .info p {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    /* --- Estilos da Lista e Configuração --- */
+    .data-wrapper {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .data-wrapper h3 {
+        margin: 0 0 20px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .payment-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .payment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+    }
+
+    .payment-item:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .payment-item .item-details {
+        display: flex;
+        align-items: center;
+    }
+
+    .payment-item .item-icon {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--bg-color);
+        margin-right: 15px;
+    }
+
+    .payment-item .item-info .name {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .payment-item .item-info .type {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    
+    .payment-item .item-info .due-date {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+    
+    .payment-item.due-soon .due-date { color: var(--warning-color); }
+    .payment-item.overdue .due-date { color: var(--danger-color); font-weight: 600; }
+
+    .payment-item .item-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    /* --- Configuração da Planilha --- */
+    .config-form .form-group {
+        margin-bottom: 20px;
+    }
+    .config-form label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+    .config-form input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .config-form button {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .config-form button:hover {
+        background: #2563eb;
+    }
+
+    /* --- Gráficos --- */
+    .charts-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    .chart-wrapper {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chart-wrapper h3 {
+        margin: 0 0 20px 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .hidden { display: none; }
+
+    /* Responsividade */
+    @media (max-width: 1200px) {
+        .charts-container { grid-template-columns: 1fr; }
+        .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+        .sidebar { position: static; width: 100%; height: auto; }
+        .content { margin-left: 0; padding: 20px; }
+        .cards { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    }
+</style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <a id="home-link" class="active"><i class="fas fa-home"></i> Home</a>
+            <a id="charts-link"><i class="fas fa-chart-bar"></i> Gráficos</a>
+            <a id="files-link"><i class="fas fa-file-alt"></i> Arquivos</a>
+            <a href="#"><i class="fas fa-envelope"></i> Mensagens</a>
+            <a href="#"><i class="fas fa-bell"></i> Notificações</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <header class="content-header">
+            <h1>Dashboard</h1>
+            <p>Bem-vindo! Aqui está um resumo da sua atividade.</p>
+        </header>
+
+        <section id="home-section">
+            <div class="cards">
+                <div class="card">
+                    <div class="icon total-balance"><i class="fas fa-wallet"></i></div>
+                    <div class="info">
+                        <h3>Saldo Total</h3>
+                        <p id="total-balance">R$ 0,00</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon pending-value"><i class="fas fa-clock"></i></div>
+                    <div class="info">
+                        <h3>Valor Pendente</h3>
+                        <p id="pending-value">R$ 0,00</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon overdue-value"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="info">
+                        <h3>Valor Vencido</h3>
+                        <p id="overdue-value">R$ 0,00</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon paid-percentage"><i class="fas fa-check-circle"></i></div>
+                    <div class="info">
+                        <h3>% Pagos</h3>
+                        <p id="paid-percentage">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-wrapper">
+                <h3>Pagamentos Pendentes</h3>
+                <ul id="payment-list" class="payment-list">
+                    <!-- A lista será preenchida por JavaScript -->
+                </ul>
+            </div>
+        </section>
+
+        <section id="charts-section" class="hidden">
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h3>Resultados Anuais</h3>
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h3>Progresso</h3>
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Tendência Mensal</h3>
+                <canvas id="lineChart"></canvas>
+            </div>
+        </section>
+
+        <section id="files-section" class="hidden">
+            <div class="data-wrapper">
+                <h3>Configuração da API Google Sheets</h3>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="api-key-input">Chave da API (API Key)</label>
+                        <input type="password" id="api-key-input" placeholder="Cole a sua chave da API aqui...">
+                    </div>
+                    <div class="form-group">
+                        <label for="spreadsheet-id-input">ID da Planilha (Spreadsheet ID)</label>
+                        <input type="text" id="spreadsheet-id-input" placeholder="Cole o ID da sua planilha aqui...">
+                    </div>
+                    <div class="form-group">
+                        <label for="sheet-name-input">Nome da Página (ex: Página1)</label>
+                        <input type="text" id="sheet-name-input" placeholder="Insira o nome exato da página...">
+                    </div>
+                    <button id="save-api-btn">Salvar e Recarregar</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Elementos da DOM ---
+        const homeLink = document.getElementById('home-link');
+        const chartsLink = document.getElementById('charts-link');
+        const filesLink = document.getElementById('files-link');
+        
+        const homeSection = document.getElementById('home-section');
+        const chartsSection = document.getElementById('charts-section');
+        const filesSection = document.getElementById('files-section');
+        
+        const apiKeyInput = document.getElementById('api-key-input');
+        const spreadsheetIdInput = document.getElementById('spreadsheet-id-input');
+        const sheetNameInput = document.getElementById('sheet-name-input');
+        const saveApiBtn = document.getElementById('save-api-btn');
+
+        const navLinks = document.querySelectorAll('.sidebar nav a');
+        
+        // --- Carregar Configurações da API ---
+        apiKeyInput.value = localStorage.getItem('googleSheetsApiKey') || '';
+        spreadsheetIdInput.value = localStorage.getItem('googleSheetsId') || '';
+        sheetNameInput.value = localStorage.getItem('googleSheetName') || 'Página1';
+        
+        // --- Lógica de Navegação ---
+        function showSection(sectionToShow, activeLink) {
+            [homeSection, chartsSection, filesSection].forEach(section => section.classList.add('hidden'));
+            sectionToShow.classList.remove('hidden');
+            navLinks.forEach(link => link.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+
+        homeLink.addEventListener('click', () => showSection(homeSection, homeLink));
+        chartsLink.addEventListener('click', () => showSection(chartsSection, chartsLink));
+        filesLink.addEventListener('click', () => showSection(filesSection, filesLink));
+
+        saveApiBtn.addEventListener('click', () => {
+            localStorage.setItem('googleSheetsApiKey', apiKeyInput.value.trim());
+            localStorage.setItem('googleSheetsId', spreadsheetIdInput.value.trim());
+            localStorage.setItem('googleSheetName', sheetNameInput.value.trim());
+            alert('Configurações da API guardadas! A página será recarregada.');
+            window.location.reload();
+        });
+
+        // --- Lógica de Carregamento e Processamento de Dados via API ---
+        async function loadDataFromApi() {
+            const apiKey = localStorage.getItem('googleSheetsApiKey');
+            const spreadsheetId = localStorage.getItem('googleSheetsId');
+            const sheetName = localStorage.getItem('googleSheetName');
+
+            if (!apiKey || !spreadsheetId || !sheetName) {
+                document.getElementById('payment-list').innerHTML = '<li>Configure a API na aba "Arquivos" para carregar os dados.</li>';
+                return;
+            }
+
+            const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Erro na rede: ${response.statusText}`);
+                }
+                const data = await response.json();
+                const rows = data.values;
+                if (!rows || rows.length < 2) {
+                    throw new Error("A planilha está vazia ou não tem cabeçalhos.");
+                }
+
+                const headers = rows[0];
+                const jsonData = rows.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index];
+                    });
+                    return obj;
+                });
+                
+                const parsedData = jsonData.map(row => ({
+                    ...row,
+                    value: parseFloat(String(row.Valor).replace(',', '.')) || 0
+                }));
+                processData(parsedData);
+
+            } catch (error) {
+                console.error("Erro ao carregar dados da API:", error);
+                document.getElementById('payment-list').innerHTML = `<li>Erro: ${error.message}. Verifique as configurações na aba "Arquivos".</li>`;
+            }
+        }
+
+        function processData(paymentsData) {
+            // Cálculos para os cards
+            const totalBalance = paymentsData.filter(p => p.status === 'concluido').reduce((sum, p) => sum + p.value, 0);
+            const pendingValue = paymentsData.filter(p => p.status === 'pendente').reduce((sum, p) => sum + p.value, 0);
+            const overdueValue = paymentsData.filter(p => p.status === 'vencido').reduce((sum, p) => sum + p.value, 0);
+            const totalPayments = paymentsData.length;
+            const completedPayments = paymentsData.filter(p => p.status === 'concluido').length;
+            const paidPercentage = totalPayments > 0 ? (completedPayments / totalPayments) * 100 : 0;
+
+            // Atualizar os cards no HTML
+            document.getElementById('total-balance').innerText = `R$ ${totalBalance.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('pending-value').innerText = `R$ ${pendingValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('overdue-value').innerText = `R$ ${overdueValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('paid-percentage').innerText = `${paidPercentage.toFixed(1)}%`;
+
+            // Preencher a lista de pagamentos pendentes
+            const paymentList = document.getElementById('payment-list');
+            paymentList.innerHTML = ''; // Limpa a lista antes de preencher
+            const pendingAndOverdue = paymentsData.filter(p => p.status === 'pendente' || p.status === 'vencido');
+            
+            pendingAndOverdue.forEach(p => {
+                const li = document.createElement('li');
+                li.className = 'payment-item';
+                if (p.status === 'vencido') li.classList.add('overdue');
+                
+                const iconClass = p.type === 'Cartão de Crédito' ? 'fa-credit-card' : p.type === 'Boleto' ? 'fa-barcode' : 'fa-mobile-alt';
+                
+                li.innerHTML = `
+                    <div class="item-details">
+                        <div class="item-icon"><i class="fas ${iconClass}"></i></div>
+                        <div class="item-info">
+                            <span class="name">${p.name}</span>
+                            <span class="type">${p.type}</span>
+                            <span class="due-date">Vence em ${new Date(p.dueDate).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                    </div>
+                    <span class="item-value">R$ ${p.value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                `;
+                paymentList.appendChild(li);
+            });
+
+            // Lógica dos gráficos
+            const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } };
+            new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'], datasets: [{ label: '2024', data: [10, 20, 15, 12, 30], backgroundColor: 'rgba(59, 130, 246, 0.7)' }, { label: '2025', data: [15, 25, 10, 20, 22], backgroundColor: 'rgba(234, 179, 8, 0.7)' }] }, options: chartOptions });
+            new Chart(document.getElementById('doughnutChart'), { type: 'doughnut', data: { labels: ['Concluído', 'Pendente', 'Vencido'], datasets: [{ data: [completedPayments, pendingAndOverdue.filter(p => p.status === 'pendente').length, pendingAndOverdue.filter(p => p.status === 'vencido').length], backgroundColor: ['#3b82f6', '#f97316', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            new Chart(document.getElementById('lineChart'), { type: 'line', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'], datasets: [{ label: 'Tendência', data: [5, 15, 8, 20, 25], borderColor: '#3b82f6', fill: true, tension: 0.4 }] }, options: chartOptions });
+        }
+        
+        // Iniciar o carregamento dos dados
+        loadDataFromApi();
+    });
+</script>
+</body>
+</html>
