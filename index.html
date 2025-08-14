@@ -503,13 +503,13 @@
     <div id="main-app-wrapper" class="blurred">
         <aside class="sidebar">
             <nav>
-                <a id="home-link" class="active"><i class="fas fa-home"></i> Home</a>
+                <a id="dashboard-link" class="active"><i class="fas fa-home"></i> Dashboard</a>
                 <a id="cobrancas-link"><i class="fas fa-file-invoice-dollar"></i> Cobranças</a>
                 <a id="charts-link"><i class="fas fa-chart-bar"></i> Gráficos</a>
-                <a id="files-link"><i class="fas fa-file-alt"></i> Arquivos</a>
-                <a id="users-link" class="hidden"><i class="fas fa-users"></i> Usuários</a>
-                <a href="#"><i class="fas fa-envelope"></i> Mensagens</a>
-                <a href="#"><i class="fas fa-bell"></i> Notificações</a>
+                <a id="integracoes-link"><i class="fas fa-plug"></i> Integrações</a>
+                <a id="admin-link" class="hidden"><i class="fas fa-users-cog"></i> Administração</a>
+                <a id="marketing-link"><i class="fas fa-bullhorn"></i> Marketing</a>
+                <a id="notificacoes-link"><i class="fas fa-bell"></i> Notificações</a>
             </nav>
         </aside>
 
@@ -519,7 +519,7 @@
                 <p>Bem-vindo! Aqui está um resumo da sua atividade.</p>
             </header>
 
-            <section id="home-section">
+            <section id="dashboard-section">
                 <div class="cards">
                     <div class="card" id="total-balance-card">
                         <div class="icon total-balance"><i class="fas fa-wallet"></i></div>
@@ -636,7 +636,7 @@
                 </div>
             </section>
 
-            <section id="files-section" class="hidden">
+            <section id="integracoes-section" class="hidden">
                 <div class="data-wrapper">
                     <h3>Configuração da API Google Sheets</h3>
                     <div class="config-form">
@@ -657,7 +657,7 @@
                 </div>
             </section>
 
-            <section id="users-section" class="hidden">
+            <section id="admin-section" class="hidden">
                 <div class="data-wrapper">
                     <h3>Criar Novo Usuário</h3>
                     <form id="create-user-form" class="config-form">
@@ -699,6 +699,14 @@
                     </table>
                 </div>
             </section>
+            
+            <!-- Seções vazias para as novas abas -->
+            <section id="marketing-section" class="hidden">
+                 <div class="data-wrapper"><h3>Marketing</h3><p>Conteúdo da página de marketing.</p></div>
+            </section>
+            <section id="notificacoes-section" class="hidden">
+                 <div class="data-wrapper"><h3>Notificações</h3><p>Conteúdo da página de notificações.</p></div>
+            </section>
         </main>
     </div>
 
@@ -736,17 +744,21 @@
         });
         
         // --- Elementos da DOM ---
-        const homeLink = document.getElementById('home-link');
+        const dashboardLink = document.getElementById('dashboard-link');
         const chartsLink = document.getElementById('charts-link');
-        const filesLink = document.getElementById('files-link');
+        const integracoesLink = document.getElementById('integracoes-link');
         const cobrancasLink = document.getElementById('cobrancas-link');
-        const usersLink = document.getElementById('users-link');
-        const usersSection = document.getElementById('users-section');
-        
-        const homeSection = document.getElementById('home-section');
+        const adminLink = document.getElementById('admin-link');
+        const marketingLink = document.getElementById('marketing-link');
+        const notificacoesLink = document.getElementById('notificacoes-link');
+
+        const dashboardSection = document.getElementById('dashboard-section');
         const chartsSection = document.getElementById('charts-section');
-        const filesSection = document.getElementById('files-section');
+        const integracoesSection = document.getElementById('integracoes-section');
         const cobrancasSection = document.getElementById('cobrancas-section');
+        const adminSection = document.getElementById('admin-section');
+        const marketingSection = document.getElementById('marketing-section');
+        const notificacoesSection = document.getElementById('notificacoes-section');
 
         const totalBalanceCard = document.getElementById('total-balance-card');
         const pendingValueCard = document.getElementById('pending-value-card');
@@ -768,31 +780,42 @@
         // --- Lógica de Permissões ---
         function applyPermissions(role) {
             if (role === 'admin') {
-                usersLink.classList.remove('hidden');
+                adminLink.classList.remove('hidden');
             } else if (role === 'financeiro') {
                 totalBalanceCard.classList.add('hidden');
                 chartsLink.classList.add('hidden');
-                filesLink.classList.add('hidden');
-                usersLink.classList.add('hidden');
+                integracoesLink.classList.add('hidden');
+                adminLink.classList.add('hidden');
             }
         }
 
         // --- Lógica de Navegação ---
         function showSection(sectionToShow, activeLink) {
-            [homeSection, chartsSection, filesSection, cobrancasSection, usersSection].forEach(section => section.classList.add('hidden'));
+            [dashboardSection, chartsSection, integracoesSection, cobrancasSection, adminSection, marketingSection, notificacoesSection].forEach(section => section.classList.add('hidden'));
             sectionToShow.classList.remove('hidden');
             navLinks.forEach(link => link.classList.remove('active'));
             activeLink.classList.add('active');
         }
 
-        homeLink.addEventListener('click', () => showSection(homeSection, homeLink));
+        dashboardLink.addEventListener('click', () => showSection(dashboardSection, dashboardLink));
         chartsLink.addEventListener('click', () => showSection(chartsSection, chartsLink));
-        filesLink.addEventListener('click', () => showSection(filesSection, filesLink));
+        integracoesLink.addEventListener('click', () => showSection(integracoesSection, integracoesLink));
         cobrancasLink.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
-        usersLink.addEventListener('click', () => showSection(usersSection, usersLink));
+        adminLink.addEventListener('click', () => showSection(adminSection, adminLink));
+        marketingLink.addEventListener('click', () => showSection(marketingSection, marketingLink));
+        notificacoesLink.addEventListener('click', () => showSection(notificacoesSection, notificacoesLink));
         
-        pendingValueCard.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
-        overdueValueCard.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
+        // CORREÇÃO: Navegação com filtro automático
+        pendingValueCard.addEventListener('click', () => {
+            statusFilter.value = 'pendente';
+            showSection(cobrancasSection, cobrancasLink);
+            updateCobrancasView();
+        });
+        overdueValueCard.addEventListener('click', () => {
+            statusFilter.value = 'vencido';
+            showSection(cobrancasSection, cobrancasLink);
+            updateCobrancasView();
+        });
 
         // --- Lógica de Filtro, Ordenação e Paginação ---
         statusFilter.addEventListener('change', () => { currentPage = 1; updateCobrancasView(); });
