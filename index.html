@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard Financeiro via API</title>
+<title>Dashboard Financeiro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,7 +29,12 @@
         font-family: 'Poppins', sans-serif;
         background: var(--bg-color);
         color: var(--text-primary);
-        display: flex;
+    }
+
+    /* --- Efeito de Blur --- */
+    .blurred {
+        filter: blur(5px);
+        transition: filter 0.3s ease-out;
     }
 
     /* --- Menu Lateral --- */
@@ -98,7 +103,7 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 25px;
         margin-bottom: 30px;
     }
@@ -110,6 +115,13 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         display: flex;
         align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card.clickable:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+        cursor: pointer;
     }
 
     .card .icon {
@@ -137,6 +149,35 @@
         font-weight: 600;
     }
 
+    /* --- Barra de Ação --- */
+    .action-bar {
+        margin-bottom: 30px;
+        text-align: right;
+    }
+
+    .action-bar button {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .action-bar button:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .action-bar button i {
+        margin-right: 8px;
+    }
+
     /* --- Estilos da Lista e Configuração --- */
     .data-wrapper {
         background: var(--card-bg);
@@ -145,8 +186,17 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
-    .data-wrapper h3 {
-        margin: 0 0 20px 0;
+    .data-wrapper-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .data-wrapper-header h3 {
+        margin: 0;
         font-size: 1.2rem;
         font-weight: 600;
     }
@@ -211,38 +261,32 @@
         font-size: 1.1rem;
     }
     
-    /* --- Configuração da Planilha --- */
-    .config-form .form-group {
-        margin-bottom: 20px;
+    /* --- Filtros e Ordenação --- */
+    .table-controls {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+        flex-wrap: wrap; /* Permite que os filtros quebrem linha em telas menores */
     }
-    .config-form label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: 500;
+    .table-controls .control-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .table-controls label {
+        font-size: 0.8rem;
         color: var(--text-secondary);
+        margin-bottom: 5px;
     }
-    .config-form input {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid var(--border-color);
+    .table-controls select, .table-controls input {
+        padding: 8px 12px;
         border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        font-family: 'Poppins', sans-serif;
         font-size: 1rem;
     }
-    .config-form button {
-        background: var(--accent-color);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-    .config-form button:hover {
-        background: #2563eb;
-    }
 
-    /* --- Gráficos --- */
+    /* --- Gráficos e Tabela de Cobranças --- */
     .charts-container {
         display: grid;
         grid-template-columns: 2fr 1fr;
@@ -267,142 +311,475 @@
         flex-shrink: 0;
     }
 
-    .hidden { display: none; }
+    .chart-canvas-wrapper {
+        position: relative;
+        flex-grow: 1;
+        min-height: 0;
+    }
+    
+    .full-width-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .full-width-table th, .full-width-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .full-width-table th {
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    .full-width-table .status-concluido {
+        color: var(--success-color);
+        font-weight: 500;
+    }
+     .full-width-table .status-vencido {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+    .full-width-table .status-pendente {
+        color: var(--warning-color);
+        font-weight: 500;
+    }
+
+    /* --- Paginação --- */
+    .pagination-controls {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 20px;
+        gap: 10px;
+    }
+    .pagination-btn {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .pagination-btn:hover:not(:disabled) {
+        background-color: var(--bg-color);
+    }
+    .pagination-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    .page-info {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    /* --- Login Popup --- */
+    .login-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        transition: opacity 0.3s ease;
+    }
+
+    .login-popup {
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .login-popup h2 {
+        margin: 0 0 10px 0;
+        color: var(--text-primary);
+    }
+
+    .login-popup p {
+        margin-bottom: 30px;
+        color: var(--text-secondary);
+    }
+
+    .login-popup .input-group {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+    .login-popup .input-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .login-popup .input-group input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+
+    .login-popup button {
+        width: 100%;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        font-size: 1rem;
+        margin-top: 10px;
+    }
+
+    .login-popup button:hover {
+        background: #2563eb;
+    }
+
+    .login-popup .error-message {
+        color: var(--danger-color);
+        font-weight: 500;
+        margin-bottom: 15px;
+        height: 20px;
+    }
+
+
+    .hidden { display: none !important; }
 
     /* Responsividade */
     @media (max-width: 1200px) {
         .charts-container { grid-template-columns: 1fr; }
-        .cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 992px) {
+        .cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
     @media (max-width: 768px) {
-        .sidebar { position: static; width: 100%; height: auto; }
-        .content { margin-left: 0; padding: 20px; }
-        .cards { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        .sidebar {
+            position: static;
+            width: 100%;
+            height: auto;
+        }
+        .content {
+            margin-left: 0;
+            padding: 20px;
+        }
+    }
+    @media (max-width: 576px) {
+        .cards {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <nav>
-            <a id="home-link" class="active"><i class="fas fa-home"></i> Home</a>
-            <a id="charts-link"><i class="fas fa-chart-bar"></i> Gráficos</a>
-            <a id="files-link"><i class="fas fa-file-alt"></i> Arquivos</a>
-            <a href="#"><i class="fas fa-envelope"></i> Mensagens</a>
-            <a href="#"><i class="fas fa-bell"></i> Notificações</a>
-        </nav>
-    </aside>
-
-    <main class="content">
-        <header class="content-header">
-            <h1>Dashboard</h1>
-            <p>Bem-vindo! Aqui está um resumo da sua atividade.</p>
-        </header>
-
-        <section id="home-section">
-            <div class="cards">
-                <div class="card">
-                    <div class="icon total-balance"><i class="fas fa-wallet"></i></div>
-                    <div class="info">
-                        <h3>Saldo Total</h3>
-                        <p id="total-balance">R$ 0,00</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="icon pending-value"><i class="fas fa-clock"></i></div>
-                    <div class="info">
-                        <h3>Valor Pendente</h3>
-                        <p id="pending-value">R$ 0,00</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="icon overdue-value"><i class="fas fa-exclamation-circle"></i></div>
-                    <div class="info">
-                        <h3>Valor Vencido</h3>
-                        <p id="overdue-value">R$ 0,00</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="icon paid-percentage"><i class="fas fa-check-circle"></i></div>
-                    <div class="info">
-                        <h3>% Pagos</h3>
-                        <p id="paid-percentage">0%</p>
-                    </div>
-                </div>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-popup">
+            <h2>Acesso Restrito</h2>
+            <p>Por favor, insira as suas credenciais para continuar.</p>
+            <div class="input-group">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" placeholder="Digite o usuário">
             </div>
-
-            <div class="data-wrapper">
-                <h3>Pagamentos Pendentes</h3>
-                <ul id="payment-list" class="payment-list">
-                    <!-- A lista será preenchida por JavaScript -->
-                </ul>
+            <div class="input-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" placeholder="Digite a senha">
             </div>
-        </section>
+            <p id="error-message" class="error-message hidden">Usuário ou senha inválidos.</p>
+            <button id="login-btn">Entrar</button>
+        </div>
+    </div>
 
-        <section id="charts-section" class="hidden">
-            <div class="charts-container">
+    <div id="main-app-wrapper" class="blurred">
+        <aside class="sidebar">
+            <nav>
+                <a id="home-link" class="active"><i class="fas fa-home"></i> Home</a>
+                <a id="cobrancas-link"><i class="fas fa-file-invoice-dollar"></i> Cobranças</a>
+                <a id="charts-link"><i class="fas fa-chart-bar"></i> Gráficos</a>
+                <a id="files-link"><i class="fas fa-file-alt"></i> Arquivos</a>
+                <a id="users-link" class="hidden"><i class="fas fa-users"></i> Usuários</a>
+                <a href="#"><i class="fas fa-envelope"></i> Mensagens</a>
+                <a href="#"><i class="fas fa-bell"></i> Notificações</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="content-header">
+                <h1>Dashboard</h1>
+                <p>Bem-vindo! Aqui está um resumo da sua atividade.</p>
+            </header>
+
+            <section id="home-section">
+                <div class="cards">
+                    <div class="card" id="total-balance-card">
+                        <div class="icon total-balance"><i class="fas fa-wallet"></i></div>
+                        <div class="info">
+                            <h3>Saldo Total</h3>
+                            <p id="total-balance">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="card clickable" id="pending-value-card">
+                        <div class="icon pending-value"><i class="fas fa-clock"></i></div>
+                        <div class="info">
+                            <h3>Valor Pendente</h3>
+                            <p id="pending-value">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="card clickable" id="overdue-value-card">
+                        <div class="icon overdue-value"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="info">
+                            <h3>Valor Vencido</h3>
+                            <p id="overdue-value">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="icon paid-percentage"><i class="fas fa-check-circle"></i></div>
+                        <div class="info">
+                            <h3>% Pagos</h3>
+                            <p id="paid-percentage">0%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <button id="generate-invoice-btn">
+                        <i class="fas fa-plus-circle"></i> Gerar Cobrança
+                    </button>
+                </div>
+
+                <div class="data-wrapper">
+                    <h3>Pagamentos Vencidos</h3>
+                    <ul id="payment-list" class="payment-list">
+                        <!-- A lista será preenchida por JavaScript -->
+                    </ul>
+                </div>
+            </section>
+
+            <section id="cobrancas-section" class="hidden">
+                <div class="data-wrapper">
+                    <div class="data-wrapper-header">
+                        <h3>Histórico de Cobranças</h3>
+                        <div class="table-controls">
+                            <div class="control-group">
+                                <label for="search-input">Pesquisar Cliente</label>
+                                <input type="text" id="search-input" placeholder="Digite um nome...">
+                            </div>
+                            <div class="control-group">
+                                <label for="status-filter">Filtrar por Status</label>
+                                <select id="status-filter">
+                                    <option value="todos">Todos</option>
+                                    <option value="concluido">Pago</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="vencido">Vencido</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label for="sort-filter">Ordenar por</label>
+                                <select id="sort-filter">
+                                    <option value="vencimento">Vencimento</option>
+                                    <option value="cliente">Cliente</option>
+                                    <option value="valor">Valor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="full-width-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cobrancas-table-body">
+                            <!-- Tabela preenchida por JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="pagination-controls" id="pagination-controls">
+                        <!-- Controles de paginação preenchidos por JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="charts-section" class="hidden">
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>Valor por Categoria</h3>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Distribuição de Valores</h3>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="doughnutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
                 <div class="chart-wrapper">
-                    <h3>Resultados Anuais</h3>
-                    <canvas id="barChart"></canvas>
+                    <h3>Tendência de Faturamento</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="lineChart"></canvas>
+                    </div>
                 </div>
-                <div class="chart-wrapper">
-                    <h3>Progresso</h3>
-                    <canvas id="doughnutChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Tendência Mensal</h3>
-                <canvas id="lineChart"></canvas>
-            </div>
-        </section>
+            </section>
 
-        <section id="files-section" class="hidden">
-            <div class="data-wrapper">
-                <h3>Configuração da API Google Sheets</h3>
-                <div class="config-form">
-                    <div class="form-group">
-                        <label for="api-key-input">Chave da API (API Key)</label>
-                        <input type="password" id="api-key-input" placeholder="Cole a sua chave da API aqui...">
+            <section id="files-section" class="hidden">
+                <div class="data-wrapper">
+                    <h3>Configuração da API Google Sheets</h3>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label for="api-key-input">Chave da API (API Key)</label>
+                            <input type="password" id="api-key-input" placeholder="Cole a sua chave da API aqui...">
+                        </div>
+                        <div class="form-group">
+                            <label for="spreadsheet-id-input">ID da Planilha (Spreadsheet ID)</label>
+                            <input type="text" id="spreadsheet-id-input" placeholder="Cole o ID da sua planilha aqui...">
+                        </div>
+                        <div class="form-group">
+                            <label for="sheet-name-input">Nome da Página (ex: Extrato)</label>
+                            <input type="text" id="sheet-name-input" placeholder="Insira o nome exato da página...">
+                        </div>
+                        <button id="save-api-btn">Salvar e Recarregar</button>
                     </div>
-                    <div class="form-group">
-                        <label for="spreadsheet-id-input">ID da Planilha (Spreadsheet ID)</label>
-                        <input type="text" id="spreadsheet-id-input" placeholder="Cole o ID da sua planilha aqui...">
-                    </div>
-                    <div class="form-group">
-                        <label for="sheet-name-input">Nome da Página (ex: Página1)</label>
-                        <input type="text" id="sheet-name-input" placeholder="Insira o nome exato da página...">
-                    </div>
-                    <button id="save-api-btn">Salvar e Recarregar</button>
                 </div>
-            </div>
-        </section>
-    </main>
+            </section>
+
+            <section id="users-section" class="hidden">
+                <div class="data-wrapper">
+                    <h3>Criar Novo Usuário</h3>
+                    <form id="create-user-form" class="config-form">
+                        <div class="form-group">
+                            <label for="new-user-name">Nome</label>
+                            <input type="text" id="new-user-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-email">Email</label>
+                            <input type="email" id="new-user-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-password">Senha</label>
+                            <input type="password" id="new-user-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-user-role">Função</label>
+                            <select id="new-user-role">
+                                <option value="financeiro">Financeiro</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit">Criar Usuário</button>
+                    </form>
+                </div>
+                <div class="data-wrapper" style="margin-top: 30px;">
+                    <h3>Usuários Existentes</h3>
+                    <table class="full-width-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Função</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Tabela de usuários preenchida por JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Base de Dados de Usuários (Simulação) ---
+        let users = JSON.parse(localStorage.getItem('dashboardUsers')) || [
+            { name: 'Breno', email: 'breno@admin.com', password: '12345', role: 'admin' },
+            { name: 'Financeiro', email: 'financeiro@test.com', password: '123', role: 'financeiro' }
+        ];
+
+        // --- Lógica de Login ---
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginBtn = document.getElementById('login-btn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+        const mainAppWrapper = document.getElementById('main-app-wrapper');
+        
+        loginBtn.addEventListener('click', () => {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            const foundUser = users.find(user => user.name === username && user.password === password);
+
+            if (foundUser) {
+                loginOverlay.style.opacity = '0';
+                mainAppWrapper.classList.remove('blurred');
+                applyPermissions(foundUser.role);
+                setTimeout(() => {
+                    loginOverlay.classList.add('hidden');
+                }, 300);
+            } else {
+                errorMessage.classList.remove('hidden');
+            }
+        });
+        
         // --- Elementos da DOM ---
         const homeLink = document.getElementById('home-link');
         const chartsLink = document.getElementById('charts-link');
         const filesLink = document.getElementById('files-link');
+        const cobrancasLink = document.getElementById('cobrancas-link');
+        const usersLink = document.getElementById('users-link');
+        const usersSection = document.getElementById('users-section');
         
         const homeSection = document.getElementById('home-section');
         const chartsSection = document.getElementById('charts-section');
         const filesSection = document.getElementById('files-section');
-        
-        const apiKeyInput = document.getElementById('api-key-input');
-        const spreadsheetIdInput = document.getElementById('spreadsheet-id-input');
-        const sheetNameInput = document.getElementById('sheet-name-input');
-        const saveApiBtn = document.getElementById('save-api-btn');
+        const cobrancasSection = document.getElementById('cobrancas-section');
 
+        const totalBalanceCard = document.getElementById('total-balance-card');
+        const pendingValueCard = document.getElementById('pending-value-card');
+        const overdueValueCard = document.getElementById('overdue-value-card');
+
+        const statusFilter = document.getElementById('status-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        const searchInput = document.getElementById('search-input');
+        
         const navLinks = document.querySelectorAll('.sidebar nav a');
         
-        // --- Carregar Configurações da API ---
-        apiKeyInput.value = localStorage.getItem('googleSheetsApiKey') || '';
-        spreadsheetIdInput.value = localStorage.getItem('googleSheetsId') || '';
-        sheetNameInput.value = localStorage.getItem('googleSheetName') || 'Página1';
+        let allInvoices = []; 
+        let chartInstances = {};
         
+        // --- Lógica de Paginação ---
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // --- Lógica de Permissões ---
+        function applyPermissions(role) {
+            if (role === 'admin') {
+                usersLink.classList.remove('hidden');
+            } else if (role === 'financeiro') {
+                totalBalanceCard.classList.add('hidden');
+                chartsLink.classList.add('hidden');
+                filesLink.classList.add('hidden');
+                usersLink.classList.add('hidden');
+            }
+        }
+
         // --- Lógica de Navegação ---
         function showSection(sectionToShow, activeLink) {
-            [homeSection, chartsSection, filesSection].forEach(section => section.classList.add('hidden'));
+            [homeSection, chartsSection, filesSection, cobrancasSection, usersSection].forEach(section => section.classList.add('hidden'));
             sectionToShow.classList.remove('hidden');
             navLinks.forEach(link => link.classList.remove('active'));
             activeLink.classList.add('active');
@@ -411,65 +788,191 @@
         homeLink.addEventListener('click', () => showSection(homeSection, homeLink));
         chartsLink.addEventListener('click', () => showSection(chartsSection, chartsLink));
         filesLink.addEventListener('click', () => showSection(filesSection, filesLink));
+        cobrancasLink.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
+        usersLink.addEventListener('click', () => showSection(usersSection, usersLink));
+        
+        pendingValueCard.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
+        overdueValueCard.addEventListener('click', () => showSection(cobrancasSection, cobrancasLink));
 
-        saveApiBtn.addEventListener('click', () => {
-            localStorage.setItem('googleSheetsApiKey', apiKeyInput.value.trim());
-            localStorage.setItem('googleSheetsId', spreadsheetIdInput.value.trim());
-            localStorage.setItem('googleSheetName', sheetNameInput.value.trim());
-            alert('Configurações da API guardadas! A página será recarregada.');
-            window.location.reload();
-        });
+        // --- Lógica de Filtro, Ordenação e Paginação ---
+        statusFilter.addEventListener('change', () => { currentPage = 1; updateCobrancasView(); });
+        sortFilter.addEventListener('change', () => { currentPage = 1; updateCobrancasView(); });
+        searchInput.addEventListener('input', () => { currentPage = 1; updateCobrancasView(); });
 
-        // --- Lógica de Carregamento e Processamento de Dados via API ---
-        async function loadDataFromApi() {
-            const apiKey = localStorage.getItem('googleSheetsApiKey');
-            const spreadsheetId = localStorage.getItem('googleSheetsId');
-            const sheetName = localStorage.getItem('googleSheetName');
-
-            if (!apiKey || !spreadsheetId || !sheetName) {
-                document.getElementById('payment-list').innerHTML = '<li>Configure a API na aba "Arquivos" para carregar os dados.</li>';
-                return;
+        function updateCobrancasView() {
+            let dataToDisplay = [...allInvoices];
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                dataToDisplay = dataToDisplay.filter(p => p.name.toLowerCase().includes(searchTerm));
             }
+            const status = statusFilter.value;
+            if (status !== 'todos') {
+                dataToDisplay = dataToDisplay.filter(p => p.status === status);
+            }
+            const sortBy = sortFilter.value;
+            if (sortBy === 'cliente') {
+                dataToDisplay.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortBy === 'valor') {
+                dataToDisplay.sort((a, b) => b.Valor - a.Valor);
+            } else if (sortBy === 'vencimento') {
+                dataToDisplay.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            }
+            
+            const totalPages = Math.ceil(dataToDisplay.length / itemsPerPage);
+            const paginatedData = dataToDisplay.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-            const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
+            populateCobrancasTable(paginatedData);
+            setupPagination(dataToDisplay.length);
+        }
 
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`Erro na rede: ${response.statusText}`);
-                }
-                const data = await response.json();
-                const rows = data.values;
-                if (!rows || rows.length < 2) {
-                    throw new Error("A planilha está vazia ou não tem cabeçalhos.");
-                }
-
-                const headers = rows[0];
-                const jsonData = rows.slice(1).map(row => {
-                    const obj = {};
-                    headers.forEach((header, index) => {
-                        obj[header] = row[index];
-                    });
-                    return obj;
+        function populateCobrancasTable(payments) {
+            const cobrancasTableBody = document.getElementById('cobrancas-table-body');
+            cobrancasTableBody.innerHTML = '';
+            if (payments.length === 0) {
+                 cobrancasTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma cobrança encontrada.</td></tr>';
+            } else {
+                payments.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const statusClass = `status-${p.status}`;
+                    tr.innerHTML = `
+                        <td>${p.name}</td>
+                        <td>R$ ${p.Valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td>${new Date(p.dueDate).toLocaleDateString('pt-BR')}</td>
+                        <td>${p.Categoria || 'N/A'}</td>
+                        <td class="${statusClass}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</td>
+                    `;
+                    cobrancasTableBody.appendChild(tr);
                 });
-                
-                const parsedData = jsonData.map(row => ({
-                    ...row,
-                    value: parseFloat(String(row.Valor).replace(',', '.')) || 0
-                }));
-                processData(parsedData);
-
-            } catch (error) {
-                console.error("Erro ao carregar dados da API:", error);
-                document.getElementById('payment-list').innerHTML = `<li>Erro: ${error.message}. Verifique as configurações na aba "Arquivos".</li>`;
             }
         }
 
+        function setupPagination(totalItems) {
+            const paginationControls = document.getElementById('pagination-controls');
+            paginationControls.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            if (totalPages <= 1) return;
+
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '&laquo; Anterior';
+            prevButton.className = 'pagination-btn';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateCobrancasView();
+                }
+            });
+
+            const pageInfo = document.createElement('span');
+            pageInfo.className = 'page-info';
+            pageInfo.innerText = `Página ${currentPage} de ${totalPages}`;
+
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = 'Próximo &raquo;';
+            nextButton.className = 'pagination-btn';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateCobrancasView();
+                }
+            });
+
+            paginationControls.appendChild(prevButton);
+            paginationControls.appendChild(pageInfo);
+            paginationControls.appendChild(nextButton);
+        }
+
+        // --- Lógica de Gestão de Usuários ---
+        const createUserForm = document.getElementById('create-user-form');
+        const usersTableBody = document.getElementById('users-table-body');
+        
+        function populateUsersTable() {
+            usersTableBody.innerHTML = '';
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</td>
+                `;
+                usersTableBody.appendChild(tr);
+            });
+        }
+
+        createUserForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newUser = {
+                name: document.getElementById('new-user-name').value,
+                email: document.getElementById('new-user-email').value,
+                password: document.getElementById('new-user-password').value,
+                role: document.getElementById('new-user-role').value
+            };
+            users.push(newUser);
+            localStorage.setItem('dashboardUsers', JSON.stringify(users));
+            populateUsersTable();
+            createUserForm.reset();
+            alert('Usuário criado com sucesso!');
+        });
+
+
+        // --- DADOS FICTÍCIOS ---
+        const fictitiousPaymentsData = [
+            // Concluídos (17 + 10 = 27)
+            { name: 'Lucas Almeida', type: 'PIX', Valor: 150.00, dueDate: '2025-07-25', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Beatriz Costa', type: 'Cartão de Crédito', Valor: 120.00, dueDate: '2025-07-28', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Pedro Rocha', type: 'Boleto', Valor: 80.00, dueDate: '2025-08-01', status: 'concluido', Categoria: 'terapia social' },
+            { name: 'Júlia Martins', type: 'PIX', Valor: 250.00, dueDate: '2025-08-05', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Guilherme Santos', type: 'Cartão de Crédito', Valor: 99.90, dueDate: '2025-08-02', status: 'concluido', Categoria: 'assinatura particular' },
+            { name: 'Isabela Ferreira', type: 'Boleto', Valor: 120.00, dueDate: '2025-07-30', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Rafael Oliveira', type: 'PIX', Valor: 150.00, dueDate: '2025-08-06', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Fernanda Lima', type: 'Cartão de Crédito', Valor: 99.90, dueDate: '2025-07-15', status: 'concluido', Categoria: 'assinatura particular' },
+            { name: 'Rodrigo Alves', type: 'Boleto', Valor: 80.00, dueDate: '2025-07-20', status: 'concluido', Categoria: 'terapia social' },
+            { name: 'Clara Mendes', type: 'PIX', Valor: 250.00, dueDate: '2025-07-22', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Sérgio Pinto', type: 'Cartão de Crédito', Valor: 120.00, dueDate: '2025-07-18', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Helena Dias', type: 'Boleto', Valor: 150.00, dueDate: '2025-07-10', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Otávio Campos', type: 'PIX', Valor: 99.90, dueDate: '2025-07-05', status: 'concluido', Categoria: 'assinatura particular' },
+            { name: 'Bárbara Moreira', type: 'Cartão de Crédito', Valor: 80.00, dueDate: '2025-07-01', status: 'concluido', Categoria: 'terapia social' },
+            { name: 'Ricardo Neves', type: 'Boleto', Valor: 120.00, dueDate: '2025-06-28', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Vanessa Moraes', type: 'PIX', Valor: 250.00, dueDate: '2025-06-25', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Daniel Fogaça', type: 'Cartão de Crédito', Valor: 150.00, dueDate: '2025-06-20', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Amanda Teixeira', type: 'PIX', Valor: 80.00, dueDate: '2025-06-15', status: 'concluido', Categoria: 'terapia social' },
+            { name: 'Fábio Melo', type: 'Boleto', Valor: 120.00, dueDate: '2025-06-18', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Carolina Bernardes', type: 'Cartão de Crédito', Valor: 250.00, dueDate: '2025-06-10', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Eduardo Peixoto', type: 'PIX', Valor: 99.90, dueDate: '2025-06-05', status: 'concluido', Categoria: 'assinatura particular' },
+            { name: 'Tatiane Gusmão', type: 'Boleto', Valor: 150.00, dueDate: '2025-05-28', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Vinícius Andrade', type: 'Cartão de Crédito', Valor: 80.00, dueDate: '2025-05-25', status: 'concluido', Categoria: 'terapia social' },
+            { name: 'Renata Barreto', type: 'PIX', Valor: 120.00, dueDate: '2025-05-20', status: 'concluido', Categoria: 'terapia plano de saude' },
+            { name: 'Alexandre Pires', type: 'Boleto', Valor: 250.00, dueDate: '2025-05-15', status: 'concluido', Categoria: 'terapia particular' },
+            { name: 'Sandra Navarro', type: 'Cartão de Crédito', Valor: 99.90, dueDate: '2025-05-10', status: 'concluido', Categoria: 'assinatura particular' },
+            { name: 'Paulo Silveira', type: 'PIX', Valor: 150.00, dueDate: '2025-05-05', status: 'concluido', Categoria: 'terapia particular' },
+
+            // Vencidos (3)
+            { name: 'Larissa Souza', type: 'Boleto', Valor: 80.00, dueDate: '2025-08-10', status: 'vencido', Categoria: 'terapia social' },
+            { name: 'Matheus Rodrigues', type: 'Cartão de Crédito', Valor: 150.00, dueDate: '2025-08-08', status: 'vencido', Categoria: 'terapia particular' },
+            { name: 'Camila Ribeiro', type: 'PIX', Valor: 120.00, dueDate: '2025-08-11', status: 'vencido', Categoria: 'terapia plano de saude' },
+
+            // Pendentes (10)
+            { name: 'Felipe Carvalho', type: 'Boleto', Valor: 250.00, dueDate: '2025-08-18', status: 'pendente', Categoria: 'terapia particular' },
+            { name: 'Manuela Gomes', type: 'PIX', Valor: 99.90, dueDate: '2025-08-20', status: 'pendente', Categoria: 'assinatura particular' },
+            { name: 'Bruno Gonçalves', type: 'Cartão de Crédito', Valor: 80.00, dueDate: '2025-08-25', status: 'pendente', Categoria: 'terapia social' },
+            { name: 'Vitória Lima', type: 'Boleto', Valor: 120.00, dueDate: '2025-08-28', status: 'pendente', Categoria: 'terapia plano de saude' },
+            { name: 'Leonardo Azevedo', type: 'PIX', Valor: 150.00, dueDate: '2025-09-01', status: 'pendente', Categoria: 'terapia particular' },
+            { name: 'Sofia Barbosa', type: 'Cartão de Crédito', Valor: 80.00, dueDate: '2025-09-05', status: 'pendente', Categoria: 'terapia social' },
+            { name: 'Diego Cardoso', type: 'Boleto', Valor: 250.00, dueDate: '2025-09-10', status: 'pendente', Categoria: 'terapia particular' },
+            { name: 'Letícia Nunes', type: 'PIX', Valor: 120.00, dueDate: '2025-09-12', status: 'pendente', Categoria: 'terapia plano de saude' },
+            { name: 'André Correia', type: 'Cartão de Crédito', Valor: 99.90, dueDate: '2025-09-15', status: 'pendente', Categoria: 'assinatura particular' },
+            { name: 'Gabriela Cunha', type: 'Boleto', Valor: 150.00, dueDate: '2025-09-20', status: 'pendente', Categoria: 'terapia particular' }
+        ];
+
         function processData(paymentsData) {
+            allInvoices = paymentsData; 
+
             // Cálculos para os cards
-            const totalBalance = paymentsData.filter(p => p.status === 'concluido').reduce((sum, p) => sum + p.value, 0);
-            const pendingValue = paymentsData.filter(p => p.status === 'pendente').reduce((sum, p) => sum + p.value, 0);
-            const overdueValue = paymentsData.filter(p => p.status === 'vencido').reduce((sum, p) => sum + p.value, 0);
+            const totalBalance = paymentsData.filter(p => p.status === 'concluido').reduce((sum, p) => sum + p.Valor, 0);
+            const pendingValue = paymentsData.filter(p => p.status === 'pendente').reduce((sum, p) => sum + p.Valor, 0);
+            const overdueValue = paymentsData.filter(p => p.status === 'vencido').reduce((sum, p) => sum + p.Valor, 0);
             const totalPayments = paymentsData.length;
             const completedPayments = paymentsData.filter(p => p.status === 'concluido').length;
             const paidPercentage = totalPayments > 0 ? (completedPayments / totalPayments) * 100 : 0;
@@ -480,41 +983,92 @@
             document.getElementById('overdue-value').innerText = `R$ ${overdueValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('paid-percentage').innerText = `${paidPercentage.toFixed(1)}%`;
 
-            // Preencher a lista de pagamentos pendentes
+            // Preencher a lista de pagamentos VENCIDOS na HOME
             const paymentList = document.getElementById('payment-list');
-            paymentList.innerHTML = ''; // Limpa a lista antes de preencher
-            const pendingAndOverdue = paymentsData.filter(p => p.status === 'pendente' || p.status === 'vencido');
+            paymentList.innerHTML = '';
+            const overduePayments = paymentsData.filter(p => p.status === 'vencido');
             
-            pendingAndOverdue.forEach(p => {
-                const li = document.createElement('li');
-                li.className = 'payment-item';
-                if (p.status === 'vencido') li.classList.add('overdue');
-                
-                const iconClass = p.type === 'Cartão de Crédito' ? 'fa-credit-card' : p.type === 'Boleto' ? 'fa-barcode' : 'fa-mobile-alt';
-                
-                li.innerHTML = `
-                    <div class="item-details">
-                        <div class="item-icon"><i class="fas ${iconClass}"></i></div>
-                        <div class="item-info">
-                            <span class="name">${p.name}</span>
-                            <span class="type">${p.type}</span>
-                            <span class="due-date">Vence em ${new Date(p.dueDate).toLocaleDateString('pt-BR')}</span>
+            if (overduePayments.length === 0) {
+                paymentList.innerHTML = '<li>Não há pagamentos vencidos.</li>';
+            } else {
+                overduePayments.forEach(p => {
+                    const li = document.createElement('li');
+                    li.className = 'payment-item overdue';
+                    
+                    const iconClass = p.type === 'Cartão de Crédito' ? 'fa-credit-card' : p.type === 'Boleto' ? 'fa-barcode' : 'fa-mobile-alt';
+                    
+                    li.innerHTML = `
+                        <div class="item-details">
+                            <div class="item-icon"><i class="fas ${iconClass}"></i></div>
+                            <div class="item-info">
+                                <span class="name">${p.name}</span>
+                                <span class="type">${p.type}</span>
+                                <span class="due-date">Vencido em ${new Date(p.dueDate).toLocaleDateString('pt-BR')}</span>
+                            </div>
                         </div>
-                    </div>
-                    <span class="item-value">R$ ${p.value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                `;
-                paymentList.appendChild(li);
-            });
+                        <span class="item-value">R$ ${p.Valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                    `;
+                    paymentList.appendChild(li);
+                });
+            }
 
-            // Lógica dos gráficos
+            // Preencher a tabela de cobranças inicialmente
+            updateCobrancasView();
+
+            // --- Lógica dos Gráficos Dinâmicos ---
+            Object.values(chartInstances).forEach(chart => chart.destroy());
+
+            const categoryTotals = paymentsData.reduce((acc, p) => {
+                const category = p.Categoria || 'Outros';
+                acc[category] = (acc[category] || 0) + p.Valor;
+                return acc;
+            }, {});
+
+            const doughnutData = [totalBalance, pendingValue, overdueValue];
+
+            const monthlyTotals = paymentsData.filter(p => p.status === 'concluido').reduce((acc, p) => {
+                const month = new Date(p.dueDate).toISOString().slice(0, 7);
+                acc[month] = (acc[month] || 0) + p.Valor;
+                return acc;
+            }, {});
+            const sortedMonths = Object.keys(monthlyTotals).sort();
+            const lineData = sortedMonths.map(month => monthlyTotals[month]);
+            const lineLabels = sortedMonths.map(month => new Date(month + '-02').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+
+
             const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } };
-            new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'], datasets: [{ label: '2024', data: [10, 20, 15, 12, 30], backgroundColor: 'rgba(59, 130, 246, 0.7)' }, { label: '2025', data: [15, 25, 10, 20, 22], backgroundColor: 'rgba(234, 179, 8, 0.7)' }] }, options: chartOptions });
-            new Chart(document.getElementById('doughnutChart'), { type: 'doughnut', data: { labels: ['Concluído', 'Pendente', 'Vencido'], datasets: [{ data: [completedPayments, pendingAndOverdue.filter(p => p.status === 'pendente').length, pendingAndOverdue.filter(p => p.status === 'vencido').length], backgroundColor: ['#3b82f6', '#f97316', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-            new Chart(document.getElementById('lineChart'), { type: 'line', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'], datasets: [{ label: 'Tendência', data: [5, 15, 8, 20, 25], borderColor: '#3b82f6', fill: true, tension: 0.4 }] }, options: chartOptions });
+            
+            chartInstances.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: Object.keys(categoryTotals), datasets: [{ label: 'Valor Total', data: Object.values(categoryTotals), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] }, options: chartOptions });
+            
+            chartInstances.doughnut = new Chart(document.getElementById('doughnutChart'), { 
+                type: 'doughnut', 
+                data: { 
+                    labels: ['Concluído', 'Pendente', 'Vencido'], 
+                    datasets: [{ 
+                        data: doughnutData, 
+                        backgroundColor: [ '#16a34a', '#f97316', '#ef4444'],
+                        borderColor: '#ffffff',
+                        borderWidth: 4
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                } 
+            });
+            
+            chartInstances.line = new Chart(document.getElementById('lineChart'), { type: 'line', data: { labels: lineLabels, datasets: [{ label: 'Faturamento Mensal', data: lineData, borderColor: '#3b82f6', fill: true, tension: 0.4 }] }, options: chartOptions });
         }
         
-        // Iniciar o carregamento dos dados
-        loadDataFromApi();
+        // Iniciar o processamento com os dados fictícios
+        processData(fictitiousPaymentsData);
+        populateUsersTable(); // Popula a tabela de usuários ao carregar
     });
 </script>
 </body>
